@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Recognition Attendance System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+      color: #000000;
+    }
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #000000;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+    .tab-container {
+      display: flex;
+      justify-content: space-around;
+      background-color: #000000;
+      padding: 10px;
+    }
+    .tab {
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 14pt;
+      font-weight: bold;
+      padding: 10px;
+      flex: 1;
+      text-align: center;
+    }
+    .tab-content {
+      padding: 20px;
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .input-field {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #000000;
+      border-radius: 5px;
+      font-size: 10pt;
+      background-color: #ffffff;
+      color: #000000;
+    }
+    .button {
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 14pt;
+      color: #ffffff;
+      background-color: #000000;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .button:hover {
+      background-color: #333333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="tab-container">
+      <div class="tab" onclick="openTab('login')">LOGIN</div>
+      <div class="tab" onclick="openTab('mainform')">Main</div>
+      <div class="tab" onclick="openTab('training')">Training</div>
+      <div class="tab" onclick="openTab('facerecognition')">Face Recognition</div>
+      <div class="tab" onclick="openTab('reports')">Reports</div>
+    </div>
+
+    <!-- Login Tab -->
+    <div id="login" class="tab-content active">
+      <h2>Face Recognition Attendance System</h2>
+      <input type="password" class="input-field" id="password" placeholder="Enter Password">
+      <button class="button" onclick="login()">LOGIN</button>
+      <p id="login-status"></p>
+    </div>
+
+    <!-- Mainform Tab -->
+    <div id="mainform" class="tab-content">
+      <h2>Main Menu</h2>
+      <button class="button" onclick="openTab('training')">Train User</button>
+      <button class="button" onclick="openTab('facerecognition')">Attendance Entry</button>
+      <button class="button" onclick="openTab('reports')">View Reports</button>
+    </div>
+
+    <!-- Training Tab -->
+    <div id="training" class="tab-content">
+      <h2>Train a New User</h2>
+      <input type="text" class="input-field" id="train-name" placeholder="Enter Name">
+      <input type="number" class="input-field" id="train-count" placeholder="Number of Captures" value="100">
+      <button class="button" onclick="trainUser()">Start Training</button>
+      <p id="training-status"></p>
+    </div>
+
+    <!-- Face Recognition Tab -->
+    <div id="facerecognition" class="tab-content">
+      <h2>Record Attendance</h2>
+      <button class="button" onclick="recordAttendance()">Start Face Recognition</button>
+      <p id="attendance-status">Status: Waiting...</p>
+    </div>
+
+    <!-- Reports Tab -->
+    <div id="reports" class="tab-content">
+      <h2>Attendance Reports</h2>
+      <button class="button" onclick="fetchReports()">Load Reports</button>
+      <table border="1" width="100%">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="report-data">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function openTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+    }
+
+    function login() {
+      let password = document.getElementById("password").value;
+      fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ "password": password })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById("login-status").innerText = "Login successful!";
+          openTab("mainform");
+        } else {
+          document.getElementById("login-status").innerText = "Invalid Password";
+        }
+      });
+    }
+
+    function trainUser() {
+      let name = document.getElementById("train-name").value;
+      let count = document.getElementById("train-count").value;
+      fetch("/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ "name": name, "count": count })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("training-status").innerText = data.message;
+      });
+    }
+
+    function recordAttendance() {
+      fetch("/record_attendance", { method: "POST" })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("attendance-status").innerText = "Status: " + data.message;
+      });
+    }
+
+    function fetchReports() {
+      fetch("/reports")
+      .then(response => response.json())
+      .then(data => {
+        let tableBody = document.getElementById("report-data");
+        tableBody.innerHTML = "";
+        data.forEach(row => {
+          let tr = `<tr>
+                      <td>${row.id}</td>
+                      <td>${row.name}</td>
+                      <td>${row.date}</td>
+                    </tr>`;
+          tableBody.innerHTML += tr;
+        });
+      });
+    }
+  </script>
+</body>
+</html>
